@@ -4,8 +4,8 @@ Custom PSI Driver to list all devices (their DeviceId and VendorId).
 
 ## Installation/uninstallation
 
-- To install driver run script install.ps1 in folder [x64/Release](https://github.com/allapugacheva/PCIDriver.git).
-- To uninstall driver run script uninstall.ps1 in folder [x64/Release](https://github.com/allapugacheva/PCIDriver.git).
+- To install driver run script install.ps1 in folder [x64/Release](https://github.com/allapugacheva/PCIDriver/tree/main/x64/Release).
+- To uninstall driver run script uninstall.ps1 in folder [x64/Release](https://github.com/allapugacheva/PCIDriver/tree/main/x64/Release).
 
 To load the driver, [GDRVLoader](https://github.com/zer0condition/GDRVLoader/tree/master) was used.
 
