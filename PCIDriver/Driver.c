@@ -19,7 +19,6 @@ NTSTATUS PCIDriverCreateClose(PDEVICE_OBJECT DeviceObject, PIRP Irp) {
 
 NTSTATUS DriverEntry(PDRIVER_OBJECT pDriverObject, PUNICODE_STRING registryPath) {
 
-	UNREFERENCED_PARAMETER(pDriverObject);
 	UNREFERENCED_PARAMETER(registryPath);
 
 	pDriverObject->DriverUnload = DriverUnload;
@@ -64,14 +63,14 @@ NTSTATUS PCIDriverDeviceControl(PDEVICE_OBJECT pDeviceObject, PIRP Irp) {
 
 	PIO_STACK_LOCATION stack = IoGetCurrentIrpStackLocation(Irp);
 	NTSTATUS status = STATUS_SUCCESS;
-	ULONG infoLength = 0;
+	ULONG_PTR information = 0;
 
 	switch (stack->Parameters.DeviceIoControl.IoControlCode) {
 
 	case IOCTL_PCI_READ_CONFIG:
 	{
 		unsigned int bus, device, function;
-		unsigned int eax, edx;
+		unsigned int wdata, rdata;
 		unsigned short vendorID, deviceID;
 		PCI_DEVICES* pciDevices = (PCI_DEVICES*)Irp->AssociatedIrp.SystemBuffer;
 		int count = 0;
@@ -79,12 +78,12 @@ NTSTATUS PCIDriverDeviceControl(PDEVICE_OBJECT pDeviceObject, PIRP Irp) {
 		for (bus = 0; bus < 256; bus++) {       
 			for (device = 0; device < 32; device++) { 
 				for (function = 0; function < 8; function++) { 
-					eax = 0x80000000 | (bus << 16) | (device << 11) | (function << 8) | (0x00); 
-					WRITE_PORT_ULONG(0xCF8, eax); 
-					edx = READ_PORT_ULONG(0xCFC); 
+					wdata = 0x80000000 | (bus << 16) | (device << 11) | (function << 8) | (0x00);
+					WRITE_PORT_ULONG(0xCF8, wdata);
+					rdata = READ_PORT_ULONG(0xCFC);
 
-					vendorID = edx & 0xFFFF;     
-					deviceID = (edx >> 16) & 0xFFFF; 
+					vendorID = rdata & 0xFFFF;
+					deviceID = (rdata >> 16) & 0xFFFF;
 
 					if (vendorID != 0xFFFF) {
 						pciDevices->devices[count].deviceId = deviceID;
@@ -96,16 +95,49 @@ NTSTATUS PCIDriverDeviceControl(PDEVICE_OBJECT pDeviceObject, PIRP Irp) {
 		}
 
 		pciDevices->count = count;
-		Irp->IoStatus.Information = sizeof(PCI_DEVICES);
+		information = sizeof(PCI_DEVICES);
+		break;
+	}
+	case IOCTL_READ_DATA:
+	{
+		if (stack->Parameters.DeviceIoControl.InputBufferLength < sizeof(READ_ADDR)
+			|| stack->Parameters.DeviceIoControl.OutputBufferLength < sizeof(READ_DATA))
+		{
+			status = STATUS_BUFFER_TOO_SMALL;
+			break;
+		}
+
+		READ_ADDR* readAddr = (READ_ADDR*)Irp->AssociatedIrp.SystemBuffer;
+		unsigned int data = READ_PORT_ULONG(readAddr->addr);
+		
+		READ_DATA* output = (READ_DATA*)Irp->AssociatedIrp.SystemBuffer;
+		output->data = data;
+
+		information = sizeof(READ_DATA);
+		break;
+	}
+	case IOCTL_WRITE_DATA:
+	{
+		if (stack->Parameters.DeviceIoControl.InputBufferLength < sizeof(READ_ADDR))
+		{
+			status = STATUS_BUFFER_TOO_SMALL;
+			break;
+		}
+
+		WRITE_ADDR_DATA* writeAddrData = (WRITE_ADDR_DATA*)Irp->AssociatedIrp.SystemBuffer;
+		WRITE_PORT_ULONG(writeAddrData->addr, writeAddrData->data);
+
+		information = 0;
 		break;
 	}
 	default:
-		Irp->IoStatus.Information = 0;
+		information = 0;
 		status = STATUS_INVALID_DEVICE_REQUEST;
 		break;
 	}
 
 	Irp->IoStatus.Status = status;
+	Irp->IoStatus.Information = information;
 	IoCompleteRequest(Irp, IO_NO_INCREMENT);
 
 	return status;
