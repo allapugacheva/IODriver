@@ -1,6 +1,8 @@
-## PCI Driver
+## PCI Driver / IO Driver
 
 Custom PSI Driver to list all devices (their DeviceId and VendorId).
+
+Also you may use it to interract with IO ports.
 
 ## Installation/uninstallation
 
