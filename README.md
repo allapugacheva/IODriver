@@ -1,8 +1,8 @@
 ## PCI Driver / IO Driver
 
-Custom PSI Driver to list all devices (their DeviceId and VendorId).
+IO Driver to get access to interact with ports on Windows
 
-Also you may use it to interract with IO ports.
+Driver supports next types of data: unsigned char, unsigned short, unsigned long
 
 ## Installation/uninstallation
 
@@ -11,45 +11,13 @@ Also you may use it to interract with IO ports.
 
 To load the driver, [GDRVLoader](https://github.com/zer0condition/GDRVLoader/tree/master) was used.
 
-## Reading PCI configuration
-
-- Include file PCI_DRIVER_HEADER.h in your project.
-
-- Open driver handler:
-```CPP
-    HANDLE hDevice = CreateFile(L"\\\\.\\PCIDriver",
-                                GENERIC_READ | GENERIC_WRITE,
-                                0,
-                                nullptr,
-                                OPEN_EXISTING,
-                                0,
-                                nullptr);
-```
-
-- Initialize sctucture for receiving data.
-```CPP
-    PCI_DEVICES pciDevices;
-```
-
-- Read PCI devices information:
-```CPP
-    DeviceIoControl(hDevice,
-                    IOCTL_PCI_READ_CONFIG,
-                    nullptr,
-                    0,
-                    &pciDevices,
-                    sizeof(pciDevices),
-                    &returned,
-                    nullptr);
-```
-
 ## Write data
 
-- Include file PCI_DRIVER_HEADER.h in your project.
+- Include file IO_DRIVER_HEADER.h in your project.
 
 - Open driver handler:
 ```CPP
-    HANDLE hDevice = CreateFile(L"\\\\.\\PCIDriver",
+    HANDLE hDevice = CreateFile(L"\\\\.\\IODriver",
                                 GENERIC_READ | GENERIC_WRITE,
                                 0,
                                 nullptr,
@@ -60,17 +28,17 @@ To load the driver, [GDRVLoader](https://github.com/zer0condition/GDRVLoader/tre
 
 - Initialize structure with data to write:
 ```CPP
-    WRITE_ADDR_DATA wad;
-    wad.addr = (unsigned long*)addr;
-    wad.data = data;
+    WRITE_UCHAR wd;
+    wd.addr = (unsigned char*)addr;
+    wd.data = data;
 ```
 
 - Write data:
 ```CPP
     DeviceIoControl(hDevice,
-                    IOCTL_WRITE_DATA,
-                    &wad,
-                    sizeof(wad),
+                    IOCTL_WRITE_UCHAR,
+                    &wd,
+                    sizeof(wd),
                     nullptr,
                     0,
                     &returned,
@@ -79,11 +47,11 @@ To load the driver, [GDRVLoader](https://github.com/zer0condition/GDRVLoader/tre
 
 ## Read data
 
-- Include file PCI_DRIVER_HEADER.h in your project.
+- Include file IO_DRIVER_HEADER.h in your project.
 
 - Open driver handler:
 ```CPP
-    HANDLE hDevice = CreateFile(L"\\\\.\\PCIDriver",
+    HANDLE hDevice = CreateFile(L"\\\\.\\IODriver",
                                 GENERIC_READ | GENERIC_WRITE,
                                 0,
                                 nullptr,
@@ -94,16 +62,16 @@ To load the driver, [GDRVLoader](https://github.com/zer0condition/GDRVLoader/tre
 
 - Initialize structure with data to write:
 ```CPP
-    READ_ADDR ra;
-    ra.addr = (unsigned long*)addr;
+    READ_UCHAR_ADDR ra;
+    ra.addr = (unsigned char*)addr;
 
-    READ_DATA rd;
+    READ_UCHAR_DATA rd;
 ```
 
 - Write data:
 ```CPP
     DeviceIoControl(hDevice,
-                    IOCTL_READ_DATA,
+                    IOCTL_READ_UCHAR,
                     &ra,
                     sizeof(ra),
                     &rd,
